@@ -6,6 +6,32 @@
 /** Public fallback gateway. Its host is always allowed in `next.config.ts`. */
 export const PUBLIC_IPFS_GATEWAY = 'https://ipfs.io';
 
+export const CID_PATTERN = /^(Qm[A-Za-z0-9]{44}|bafy[A-Za-z0-9]{50,})$/;
+
+/** Extracts content path or CID from an IPFS URI or gateway URL. */
+export function extractContentPath(cidOrUri: string | null | undefined): { cid: string; rest: string } | null {
+  if (!cidOrUri) return null;
+  const trimmed = cidOrUri.trim();
+  if (!trimmed) return null;
+
+  let cleaned = trimmed;
+  if (cleaned.startsWith('ipfs://')) {
+    cleaned = cleaned.replace('ipfs://', '');
+  } else if (cleaned.includes('/ipfs/')) {
+    const parts = cleaned.split('/ipfs/');
+    cleaned = parts[parts.length - 1];
+  } else if (cleaned.startsWith('https://') || cleaned.startsWith('http://')) {
+    return null;
+  }
+
+  return splitContentPath(cleaned);
+}
+
+/** Normalizes a gateway URL origin. */
+export function toGatewayOrigin(gateway: string): string {
+  return gateway.endsWith('/') ? gateway.slice(0, -1) : gateway;
+}
+
 /** Splits `<cid>[/sub/path]` into a validated CID and its remaining path. */
 function splitContentPath(contentPath: string): { cid: string; rest: string } | null {
   const slash = contentPath.indexOf('/');
